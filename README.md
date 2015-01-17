@@ -1,2 +1,2 @@
-# final-code
-final code for project
+# Project plan
+![currently](plan.png)
