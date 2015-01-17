@@ -1,0 +1,50 @@
+graph TB
+module1[statistics module 1]
+module2[client socket module 1]
+module3[statistics module 2]
+module4[client socket module 2]
+module5[statistics module 3]
+module6[client socket module 3]
+module7[statistics module 4]
+module8[client socket module 4]
+
+module9[server socket module]
+module10[main module]
+module11[Algorithm module]
+module12(Input from the user)
+
+db1((database 1))
+db2((database 2))
+db3((database 3))
+db4((database 4))
+
+
+subgraph one
+db1 --- module1
+module1 --- module2
+end
+
+subgraph two
+db2 --- module3
+module3 --- module4
+end
+
+subgraph three
+db3 --- module5
+module5 --- module6
+end
+
+subgraph four
+db4 --- module7
+module7 --- module8
+end
+
+
+module2 --- module9
+module4 --- module9
+module6 --- module9
+module8 --- module9
+
+module9 --- module10
+module12 --> module10
+module10 --- module11
