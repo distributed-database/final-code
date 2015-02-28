@@ -1,10 +1,11 @@
+//Actual reading function
+//reads the input from the user and returns an array of objects
+
 import java.io.*;
 
 public class rawInput {
 	
 	public userInput[] ReadInput(){
-		//Actual reading function
-		//reads the input from the user
 		
 		int num=1;
 		String temp=null;
