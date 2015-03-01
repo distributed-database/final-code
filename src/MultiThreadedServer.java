@@ -1,5 +1,6 @@
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Hashtable;
 import java.io.IOException;
 
 public class MultiThreadedServer implements Runnable{
@@ -9,6 +10,8 @@ public class MultiThreadedServer implements Runnable{
     protected boolean      isStopped    = false;
     protected Thread       runningThread= null;
 
+    public static Hashtable<String,Socket> hashTable=new Hashtable<String,Socket>();
+    
     public MultiThreadedServer(int port){
         this.serverPort = port;
     }
@@ -31,9 +34,7 @@ public class MultiThreadedServer implements Runnable{
                     "Error accepting client connection", e);
             }
             new Thread(
-                new WorkerRunnable(
-                    clientSocket, "Multithreaded Server")
-            ).start();
+                new WorkerRunnable(clientSocket)).start();
         }
         System.out.println("Server Stopped.") ;
     }
