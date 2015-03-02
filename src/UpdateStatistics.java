@@ -1,4 +1,5 @@
 import java.io.DataOutputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -8,10 +9,11 @@ import java.sql.Statement;
 import java.util.Properties;
 
 
-public class UpdateStatistics {
+public class UpdateStatistics implements Runnable{
 	/*
 	 * details of databases
 	 */
+	
 	private final String userName = "project";
 
 	private final String password = "project";
@@ -96,14 +98,19 @@ public class UpdateStatistics {
 	 * Get the cardinality of the attribute in a table
 	 * connection, table name, attribute
 	 */
-	public long getCardinality ( Connection conn, String tableName, String attributeName){
+	public long getCardinality ( Connection conn,String dbName, String tableName, String attributeName){
 		String query = "select count("+ attributeName + ") from "+ tableName + ";" ;
+		//query = "SELECT CARDINALITY FROM STATISTICS WHERE TABLE_SCHEMA = \'" + dbName + "\' AND TABLE_NAME = \'" + tableName + "\' AND COLUMN_NAME = \'" + attributeName + "\';";
 		Statement stmt = null;
 		ResultSet rs = null;
 		long cardinality = 0;
 		try{
 			stmt = conn.createStatement();
+			System.out.println(query);
 			rs = stmt.executeQuery(query);
+			if (rs == null){
+				return 0 ;
+			}
 			rs.next();
 			cardinality = rs.getInt(1);
 			rs.close();
@@ -124,7 +131,11 @@ public class UpdateStatistics {
 		long domain = 0;
 		try{
 			stmt = conn.createStatement();
+//			System.out.println(query);
 			rs = stmt.executeQuery(query);
+			if (rs == null){
+				return 0 ;
+			}
 			rs.next();
 			domain = rs.getInt(1);
 			rs.close();
@@ -138,13 +149,37 @@ public class UpdateStatistics {
 		return domain;
 	}
 	
+	public int getLength(Connection conn, String tableName, String attributeName){
+		String query = "select AVG(LENGTH("+ attributeName+")) from " +tableName ;
+		Statement stmt = null;
+		ResultSet rs = null;
+		int length = 0;
+		try{
+			stmt = conn.createStatement();
+//			System.out.println(query);
+			rs = stmt.executeQuery(query);
+			if (rs == null){
+				return 0 ;
+			}
+			rs.next();
+			length = rs.getInt(1);
+			rs.close();
+			stmt.close();
+			
+		}  catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return length;
+	}
 	/*
 	 * update statistics database if any change. 
 	 * original database connection in conn
 	 * statistics database in stat
 	 * statistics table in tableName
 	 */
-	public void statistics(Connection conn, Connection stat , String statTable){
+	public void statistics(Connection conn, Connection stat, Connection information , String statTable){
 		
 		// Read table name
 		ResultSet tableSet = null;
@@ -152,6 +187,7 @@ public class UpdateStatistics {
 		ResultSet cardinalitySet = null;
 		String tableName = null;
 		String columnName = null;
+		int length = 0;
 		long cardinality = 0;
 		long domain = 0;
 		int statCardinality = 0;
@@ -165,7 +201,7 @@ public class UpdateStatistics {
 				while (attributeSet.next()) {
 //					typeName = rsColumns.getString("TYPE_NAME");
 					columnName = attributeSet.getString("COLUMN_NAME");
-					cardinality = getCardinality(conn, tableName, columnName);
+					cardinality = getCardinality(conn,this.dbName, tableName, columnName);
 					domain = getDomainCount(conn, tableName, columnName);
 					System.out.println(tableName+"   "+  columnName + "   " + cardinality  + "     "+ domain);
 					
@@ -174,28 +210,34 @@ public class UpdateStatistics {
 					
 					stmt = stat.createStatement();
 					cardinalitySet = stmt.executeQuery(command);
+					if (cardinalitySet == null){
+						continue;
+					}
 					cardinalitySet.next();
 					statCardinality = cardinalitySet.getInt(1);
 					
-					 
-					
+					length = getLength(conn, tableName, columnName);
 					
 					if (statCardinality == 0){
-						command = "insert into "+ statTable + "(relation_name,attribute_name,cardinality  ) values (\'" + tableName + "\' ,\'" + 
-								columnName + "\',"+ cardinality+ ")";
-						System.out.println(command);
+						command = "insert into "+ statTable + "(relation_name,attribute_name,domain, cardinality, column_length ) values (\'" + tableName + "\' ,\'" + 
+								columnName + "\',"+domain+ " , "+ cardinality+" ,"+ length + ")";
+//						System.out.println(command);
 						stmt.executeUpdate(command);
 					}
 					else{
 						command = "select * from " + statTable + " where relation_name = \'" + tableName +"\' and attribute_name = \'"+ columnName + "\'";
-						System.out.println(command);
+//						System.out.println(command);
 						ResultSet rs = stmt.executeQuery(command);
+						if (rs == null){
+							continue;
+						}
+						
 						rs.next();
 						long oldCardinality = rs.getLong(4);
 						int id = rs.getInt(1);
 						if(oldCardinality != cardinality){
-							command = "update "+ statTable+ " set cardinality = "+ cardinality + " where id="+ id ;
-							System.out.println(command);
+							command = "update "+ statTable+ " set cardinality = "+ cardinality +", domain = "+ domain + ", column_length ="+ length + " where id="+ id ;
+//							System.out.println(command);
 //							stmt.executeUpdate(command);
 						}
 					}
@@ -228,18 +270,20 @@ public class UpdateStatistics {
 		return str;
 	}
 	
-	public Socket connectServer(String str){
+	public void connectServer(String str){
 		Socket s = null;
 		try{      
-			s=new Socket("192.168.40.44",9000);  
-			DataOutputStream dout=new DataOutputStream(s.getOutputStream());  
+			System.out.println("Got near connect srvr");
+			OutputStream outputStream = Client.serverSocket.getOutputStream();
+			DataOutputStream dout=new DataOutputStream(outputStream);  
 			dout.writeUTF(str);  
 			dout.flush();  
-			dout.close();  
-			s.close();  
+			outputStream.close();
+			dout.close();
+			Client.serverSocket.close();
 		}catch(Exception e){System.out.println(e);}
 		  
-		return s;
+		return;
 	}
 
 	
@@ -257,7 +301,6 @@ public class UpdateStatistics {
 		} catch (SQLException e) {
 			System.out.println("ERROR: Could not connect to the database");
 			e.printStackTrace();
-			return;
 		}
 		
 		Connection stat = null;
@@ -267,27 +310,40 @@ public class UpdateStatistics {
 		} catch (SQLException e) {
 			System.out.println("ERROR: Could not connect to the database");
 			e.printStackTrace();
-			return;
+		}
+		Connection information = null;
+		try {
+			information = this.getConnection("information_schema");
+			System.out.println("Connected to Database: information_schema ");
+		} catch (SQLException e) {
+			System.out.println("ERROR: Could not connect to the database");
+			e.printStackTrace();
 		}
 		
 
 		String str = this.getJsonForRelation(conn);
 		System.out.println(str);
-//		Socket serverSocket = connectServer(str);
+		connectServer(str);
 		
-		this.statistics(conn, stat, statTable);
+		this.statistics(conn, stat, information, statTable);
 		/*
 		 * close connection
 		 */
 		try {
 			conn.close();
 			stat.close();
+			information.close();
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
-		
+		try {
+			Thread.sleep(100*1000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 	}
 	
