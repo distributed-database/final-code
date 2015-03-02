@@ -117,6 +117,27 @@ public class UpdateStatistics {
 		return cardinality;
 	}
 	
+	public long getDomainCount (Connection conn, String tableName, String attributeName ){
+		String query = "select count(*) from (select distinct " + attributeName +" from " + tableName + " ) for_domain_count ; " ;
+		Statement stmt = null;
+		ResultSet rs = null;
+		long domain = 0;
+		try{
+			stmt = conn.createStatement();
+			rs = stmt.executeQuery(query);
+			rs.next();
+			domain = rs.getInt(1);
+			rs.close();
+			stmt.close();
+			
+		}  catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return domain;
+	}
+	
 	/*
 	 * update statistics database if any change. 
 	 * original database connection in conn
@@ -132,6 +153,7 @@ public class UpdateStatistics {
 		String tableName = null;
 		String columnName = null;
 		long cardinality = 0;
+		long domain = 0;
 		int statCardinality = 0;
 		Statement stmt = null;
 		String command = null;
@@ -144,7 +166,8 @@ public class UpdateStatistics {
 //					typeName = rsColumns.getString("TYPE_NAME");
 					columnName = attributeSet.getString("COLUMN_NAME");
 					cardinality = getCardinality(conn, tableName, columnName);
-					System.out.println(tableName+"   "+  columnName + "   " + cardinality);
+					domain = getDomainCount(conn, tableName, columnName);
+					System.out.println(tableName+"   "+  columnName + "   " + cardinality  + "     "+ domain);
 					
 					command = "select count(*) from (select * from " + statTable + " where relation_name = \'" + tableName +
 							"\' and attribute_name = \'"+ columnName + "\')attribute_only ; ";
@@ -153,6 +176,9 @@ public class UpdateStatistics {
 					cardinalitySet = stmt.executeQuery(command);
 					cardinalitySet.next();
 					statCardinality = cardinalitySet.getInt(1);
+					
+					 
+					
 					
 					if (statCardinality == 0){
 						command = "insert into "+ statTable + "(relation_name,attribute_name,cardinality  ) values (\'" + tableName + "\' ,\'" + 
@@ -202,7 +228,19 @@ public class UpdateStatistics {
 		return str;
 	}
 	
-	
+	public Socket connectServer(String str){
+		Socket s = null;
+		try{      
+			s=new Socket("192.168.40.44",9000);  
+			DataOutputStream dout=new DataOutputStream(s.getOutputStream());  
+			dout.writeUTF(str);  
+			dout.flush();  
+			dout.close();  
+			s.close();  
+		}catch(Exception e){System.out.println(e);}
+		  
+		return s;
+	}
 
 	
 	/*
@@ -233,18 +271,9 @@ public class UpdateStatistics {
 		}
 		
 
-		//this.statistics(conn, stat, statTable);
 		String str = this.getJsonForRelation(conn);
 		System.out.println(str);
-		try{      
-			Socket s=new Socket("192.168.40.44",9000);  
-			DataOutputStream dout=new DataOutputStream(s.getOutputStream());  
-			dout.writeUTF(str);  
-			dout.flush();  
-			dout.close();  
-			s.close();  
-		}catch(Exception e){System.out.println(e);}  
-		
+//		Socket serverSocket = connectServer(str);
 		
 		this.statistics(conn, stat, statTable);
 		/*
@@ -264,15 +293,7 @@ public class UpdateStatistics {
 	
 	
 	
-//	class Statistics {
-//		public String relationName = null;
-//		public Statistics(String r) {
-//			// TODO Auto-generated constructor stub
-//			relationName = r;
-//			
-//		}
-//	}
-//	
+
 	
 	
 }
