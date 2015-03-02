@@ -14,4 +14,4 @@
   Input from user
 
 # Project plan
-![currently](plan.png)
+![currently](plan.jpg)
