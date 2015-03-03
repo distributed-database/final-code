@@ -26,11 +26,6 @@ public class ReplyServer {
 	
 	private final String statTable = "stats";
 	
-	public ReplyServer(String dbName, String tableName,String columnName){
-		this.dbName = dbName;
-		this.tableName = tableName;
-		this.columnName = columnName;
-	}
 	
 	public Connection getConnection(String databaseName) throws SQLException {
 		Connection conn = null;
@@ -45,11 +40,10 @@ public class ReplyServer {
 		return conn;
 	}
 	
-	public String getStatistics(Connection statistics){
+	public void getStatistics(Connection statistics){
 		
 		Statement stmt = null;
-		String query = "select domain, cardinality, column_length from "+ statTable + " where relation_name = \'"+ this.tableName +
-				"\' and attribute_name = \'"+ this.columnName+"\';" ;
+		String query = "select domain, cardinality, column_length from "+ statTable +"\';" ;
 		ResultSet rs = null;
 		long cardinality = 0;
 		long domainCount = 0;
@@ -59,10 +53,16 @@ public class ReplyServer {
 			stmt = statistics.createStatement();
 			System.out.println(query);
 			rs = stmt.executeQuery(query);
-			rs.next();
-			domainCount = rs.getLong(1);
-			cardinality = rs.getLong(2);
-			length = rs.getInt(3);
+			while (rs.next()) {
+			    System.out.println(rs.getString(1)); //gets the first column's rows.
+			}
+			
+			
+			
+//			rs.next();
+//			domainCount = rs.getLong(1);
+//			cardinality = rs.getLong(2);
+//			length = rs.getInt(3);
 			rs.close();
 			stmt.close();
 			
@@ -70,15 +70,15 @@ public class ReplyServer {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		double selectivityFactor = 0;
-		if(cardinality != 0){
-			selectivityFactor = (double) domainCount / cardinality ;
-		}
-		String str = "{cardinality: "+ cardinality + ", selectivity:"+ selectivityFactor+ ",length:"+ length +"}";
-		return str;
+//		double selectivityFactor = 0;
+//		if(cardinality != 0){
+//			selectivityFactor = (double) domainCount / cardinality ;
+//		}
+//		String str = "{cardinality: "+ cardinality + ", selectivity:"+ selectivityFactor+ ",length:"+ length +"}";
+//		return str;
 	}
 	
-	public String run() {
+	public void run() {
 		// TODO Auto-generated method stub
 //		try {
 //			this.information = this.getConnection("information_schema");
@@ -99,7 +99,8 @@ public class ReplyServer {
 			
 		}
 		
-		String str= getStatistics(stat);
+//		String str= getStatistics(stat);
+		getStatistics(stat);
 		
 		
 		try {
@@ -110,8 +111,8 @@ public class ReplyServer {
 			e.printStackTrace();
 		}
 		
-		System.out.println(str);
-		return str;
+//		System.out.println(str);
+//		return str;
 	}
 	
 	

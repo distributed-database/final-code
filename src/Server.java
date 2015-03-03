@@ -5,7 +5,7 @@ import java.util.Hashtable;
 
 public class Server {
 	public static Hashtable<String,String> resultTable=new Hashtable<String,String>();
-	public static Hashtable<String,String> hashTable=new Hashtable<String,String>();
+//	public static Hashtable<String,String> hashTable=new Hashtable<String,String>();
 	
 	public static void main(String[] args) throws Exception{
 		// TODO Auto-generated method stub
@@ -20,19 +20,20 @@ public class Server {
 		
 		try {
 			//sleep for 30 secs.
-		    Thread.sleep(5 * 1000);
+		    Thread.sleep(30 * 1000);
 		} catch (InterruptedException e) {
 		    e.printStackTrace();
 		}
-		rawInput op = new rawInput();
-		GetStatistics stat = new GetStatistics();
-		jsonString = op.ReadInput();
-		System.out.println(jsonString);
-		stat.getStatistics(jsonString);
-		server.stop();
-//		System.out.println(MultiThreadedServer.hashTable.get("departments"));
-		System.out.println("Stopping Server");
 		
+//		rawInput op = new rawInput();
+//		GetStatistics stat = new GetStatistics();
+//		jsonString = op.ReadInput();
+//		System.out.println(jsonString);
+//		stat.getStatistics(jsonString);
+		
+		
+		System.out.println("Stopping Server");
+		server.stop();
 	
 	}
 }

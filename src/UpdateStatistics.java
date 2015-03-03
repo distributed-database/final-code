@@ -182,6 +182,8 @@ public class UpdateStatistics implements Runnable{
 	public void statistics(Connection conn, Connection stat, Connection information , String statTable){
 		
 		// Read table name
+		
+		
 		ResultSet tableSet = null;
 		ResultSet attributeSet = null;
 		ResultSet cardinalitySet = null;
@@ -203,7 +205,12 @@ public class UpdateStatistics implements Runnable{
 					columnName = attributeSet.getString("COLUMN_NAME");
 					cardinality = getCardinality(conn,this.dbName, tableName, columnName);
 					domain = getDomainCount(conn, tableName, columnName);
+					
+//					================================================
+					
 					System.out.println(tableName+"   "+  columnName + "   " + cardinality  + "     "+ domain);
+					
+//					================================================
 					
 					command = "select count(*) from (select * from " + statTable + " where relation_name = \'" + tableName +
 							"\' and attribute_name = \'"+ columnName + "\')attribute_only ; ";
@@ -255,38 +262,7 @@ public class UpdateStatistics implements Runnable{
 		}
 	}
 
-	public String getJsonForRelation(Connection conn){
-		ResultSet rs = null;
-		String relationName = null;
-		try {
-			rs = getTables(conn);
-			rs.next();
-			relationName = rs.getString(3);
-			
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		String str = "{relation : [{name: "+ relationName + "}]}";
-		return str;
-	}
-	
-	public void connectServer(String str){
-		Socket s = null;
-		try{      
-			System.out.println("Got near connect srvr");
-			OutputStream outputStream = Client.serverSocket.getOutputStream();
-			DataOutputStream dout=new DataOutputStream(outputStream);  
-			dout.writeUTF(str);  
-			dout.flush();  
-			outputStream.close();
-			dout.close();
-			Client.serverSocket.close();
-		}catch(Exception e){System.out.println(e);}
-		  
-		return;
-	}
 
-	
 	/*
 	 * function to run these functions
 	 * 
@@ -321,11 +297,8 @@ public class UpdateStatistics implements Runnable{
 		}
 		
 
-		String str = this.getJsonForRelation(conn);
-		System.out.println(str);
-		connectServer(str);
-		
 		this.statistics(conn, stat, information, statTable);
+		
 		/*
 		 * close connection
 		 */
@@ -337,14 +310,6 @@ public class UpdateStatistics implements Runnable{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		try {
-			Thread.sleep(100*1000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
 	}
 	
 	
